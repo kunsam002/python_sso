@@ -4,7 +4,7 @@ setup(
     name='python_sso',
     version='1.0.0',
     packages=['python_sso'],
-    url='',
+    url='https://github.com/kunsam002/python_sso',
     license='',
     author='kunsam002 - Olukunle Ogunmokun',
     author_email='kunsam002@gmail.com',
