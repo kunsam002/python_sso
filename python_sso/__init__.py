@@ -1,9 +1,9 @@
 import os
 import base64
 from datetime import datetime, timedelta
-
 import requests
-import g
+import json
+import urllib
 
 
 class VGGSSO:
@@ -22,10 +22,22 @@ class VGGSSO:
         self.token_url = app.config.get("VGG_SSO_TOKEN_URL", "http://sso.test.vggdev.com/identity/connect/token")
         self.api_base_url = app.config.get("VGG_SSO_API_BASE_URL", "https://ssoapi.test.vggdev.com")
 
+        self.token_type = None
+        self.access_token = None
+        self.token_expiration = None
+
     def get_access_token(self):
         """ logic for the get access token function """
+
+        time_now = datetime.now()
+
+        # Checks for previously generated access token and the validity of the access token
+        if self.token_expiration and self.token_expiration < time_now:
+            return self.token_type, self.access_token
+
         auth_key = base64.b64encode(bytes('%s:%s' % (self.client_id, self.client_secret), "utf-8"))
         headers = {"Authorization": "Basic %s" % auth_key, "Content-Type": "application/json"}
+
         data = {
             "grant_type": "password",
             "username": self.client_username,
@@ -43,16 +55,23 @@ class VGGSSO:
 
         # Calculating the access_token expiration and saving to session for subsequent requests
         if expires_in:
-            expires_in_hr = expires_in / 60
-            token_expiration = datetime.now() + timedelta(minutes=expires_in_hr)
+            expires_in_min = expires_in / 60
+            token_expiration = time_now + timedelta(minutes=expires_in_min - 1)
             self.token_expiration = token_expiration
-            g.token_expiration = token_expiration
+
+        self.token_type = token_type
+        self.access_token = access_token
 
         return token_type, access_token
 
     @staticmethod
     def check_required_fields(fields, data):
-        """ method to check all required fields are passed to the post action """
+        """
+        method to check all required fields are passed to the post action
+
+        params:
+            data - payload to be validated as having all required fields before posting
+        """
 
         if not all(key in data for key in fields):
             return False
@@ -74,6 +93,26 @@ class VGGSSO:
                              "client-id": self.client_id}
 
         resp = requests.post(url, headers=headers, data=data)
+
+        return resp.status_code, resp.content
+
+    def get(self, suffix, data):
+        """
+        handles every post request by the class object as well as process post response
+
+        params:
+            suffix - url resource name extension
+            data - params to be built on url
+        """
+
+        url = "%s%s?%s" % (self.api_base_url, suffix, urllib.urlencode(data))
+
+        token_type, access_token = self.get_access_token()
+
+        headers = headers = {"Authorization": "%s %s" % (token_type, access_token), "Content-Type": "application/json",
+                             "client-id": self.client_id}
+
+        resp = requests.get(url, headers=headers)
 
         return resp.status_code, resp.content
 
@@ -230,3 +269,240 @@ class VGGSSO:
         suffix = "/account/usersbyclaim"
 
         return self.post(suffix, data)
+
+    def account_forgot_password(self, raw_data):
+        """
+        method to request a forgot password
+
+        params:
+            raw_data - payload to be processed before building query params
+        """
+
+        required_fields = ["email"]
+
+        if not self.check_required_fields(required_fields, raw_data):
+            return dict(status="failed", data=dict(message="Missing required key value"))
+
+        suffix = "/account/forgotpassword"
+
+        data = {"email": raw_data.get("email", "")}
+
+        return self.get(suffix, data)
+
+    def account_get_user(self, raw_data):
+        """
+        method to get an individual user record by userId
+
+        params:
+            raw_data - payload to be processed before building query params
+        """
+
+        required_fields = ["userId"]
+
+        if not self.check_required_fields(required_fields, raw_data):
+            return dict(status="failed", data=dict(message="Missing required key value"))
+
+        suffix = "/account/getuser"
+
+        data = {"userId": raw_data.get("userId", "")}
+
+        return self.get(suffix, data)
+
+    def account_get_user_by_mail(self, raw_data):
+        """
+        method to get an individual user record by account email
+
+        params:
+            raw_data - payload to be processed before building query params
+        """
+
+        required_fields = ["email"]
+
+        if not self.check_required_fields(required_fields, raw_data):
+            return dict(status="failed", data=dict(message="Missing required key value"))
+
+        suffix = "/account/getuserbyemail"
+
+        data = {"email": raw_data.get("userId", ""), "pageNo": raw_data.get("pageNo", 1),
+                "pageSize": raw_data.get("pageSize", 100)}
+
+        return self.get(suffix, data)
+
+    def account_get_users(self, raw_data):
+        """
+        method to query all user records
+
+        params:
+            raw_data - payload to be processed before building query params
+        """
+
+        suffix = "/account/getusers"
+
+        data = {"letter": raw_data.get("letter", ""), "pageNo": raw_data.get("pageNo", 1),
+                "pageSize": raw_data.get("pageSize", 100)}
+
+        return self.get(suffix, data)
+
+    def account_user_claims(self, raw_data):
+        """
+        method to query user accounts by claims
+
+        params:
+            raw_data - payload to be processed before building query params
+        """
+
+        required_fields = ["userId"]
+
+        if not self.check_required_fields(required_fields, raw_data):
+            return dict(status="failed", data=dict(message="Missing required key value"))
+
+        suffix = "/account/userclaims"
+
+        data = {"userId": raw_data.get("userId", "")}
+
+        return self.get(suffix, data)
+
+    def account_lock(self, raw_data):
+        """
+        method to lock a user account
+
+        params:
+            raw_data - payload to be processed before building query params
+        """
+
+        required_fields = ["userId"]
+
+        if not self.check_required_fields(required_fields, raw_data):
+            return dict(status="failed", data=dict(message="Missing required key value"))
+
+        suffix = "/account/lock"
+
+        data = {"userId": raw_data.get("userId", "")}
+
+        return self.get(suffix, data)
+
+    def account_unlock(self, raw_data):
+        """
+        method to unlock a user account
+
+        params:
+            raw_data - payload to be processed before building query params
+        """
+
+        required_fields = ["userId"]
+
+        if not self.check_required_fields(required_fields, raw_data):
+            return dict(status="failed", data=dict(message="Missing required key value"))
+
+        suffix = "/account/unlock"
+
+        data = {"userId": raw_data.get("userId", "")}
+
+        return self.get(suffix, data)
+
+    def account_enable_two_factor(self, raw_data):
+        """
+        method to activate a two factor auth on the user account
+
+        params:
+            raw_data - payload to be processed before building query params
+        """
+
+        required_fields = ["userId"]
+
+        if not self.check_required_fields(required_fields, raw_data):
+            return dict(status="failed", data=dict(message="Missing required key value"))
+
+        suffix = "/account/enabletwofactor"
+
+        data = {"userId": raw_data.get("userId", "")}
+
+        return self.get(suffix, data)
+
+    def account_disable_two_factor(self, raw_data):
+        """
+        method to deactivate a two factor on the user account
+
+        params:
+            raw_data - payload to be processed before building query params
+        """
+
+        required_fields = ["userId"]
+
+        if not self.check_required_fields(required_fields, raw_data):
+            return dict(status="failed", data=dict(message="Missing required key value"))
+
+        suffix = "/account/disabletwofactor"
+
+        data = {"userId": raw_data.get("userId", "")}
+
+        return self.get(suffix, data)
+
+    def account_validateuser(self, raw_data):
+        """
+        method to validate a user account
+
+        params:
+            raw_data - payload to be processed before building query params
+        """
+
+        required_fields = ["userId"]
+
+        if not self.check_required_fields(required_fields, raw_data):
+            return dict(status="failed", data=dict(message="Missing required key value"))
+
+        suffix = "/account/validateuser"
+
+        data = {"userkey": raw_data.get("userId", "")}
+
+        return self.get(suffix, data)
+
+    def account_anonymous(self, data={}):
+        """
+        method to return anonymous user
+
+        params:
+            data - payload to be processed before building query params
+        """
+
+        suffix = "/account/anonymous"
+
+        return self.get(suffix, data)
+
+    def account_clearance(self, raw_data):
+        """
+        user account clearance method
+
+        params:
+            raw_data - payload to be processed before building query params
+        """
+
+        required_fields = ["userId"]
+
+        if not self.check_required_fields(required_fields, raw_data):
+            return dict(status="failed", data=dict(message="Missing required key value"))
+
+        suffix = "/account/clearance"
+
+        data = {"userId": raw_data.get("userId", "")}
+
+        return self.get(suffix, data)
+
+    def account_verifyotp(self, raw_data):
+        """
+        method to verify otp
+
+        params:
+            raw_data - payload to be processed before building query params
+        """
+
+        required_fields = ["code"]
+
+        if not self.check_required_fields(required_fields, raw_data):
+            return dict(status="failed", data=dict(message="Missing required key value"))
+
+        suffix = "/account/verifyotp"
+
+        data = {"code": raw_data.get("code", "")}
+
+        return self.get(suffix, data)
