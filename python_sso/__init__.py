@@ -37,12 +37,12 @@ class VGGSSO:
             return self.token_type, self.access_token
 
         key = '%s:%s' % (self.client_id, self.client_secret)
-        print(key, "-------------key")
+        print(key,"-------------key")
         auth_key = base64.b64encode(bytes(key))
-        print(auth_key, "-----------auth key")
+        print(auth_key,"-----------auth key")
         headers = {"Authorization": "Basic %s" % auth_key, "Content-Type": "application/x-www-form-urlencoded"}
 
-        print(headers, "-------------headers")
+        print(headers,"-------------headers")
         data = {
             "grant_type": "password",
             "username": self.client_username,
@@ -55,9 +55,9 @@ class VGGSSO:
 
         resp = requests.post(self.token_url, headers=headers, data=data)
 
-        print("response ------------", resp)
-        print("response status code ------------", resp.status_code)
-        print("response content ------------", resp.content)
+        print("response ------------",resp)
+        print("response status code ------------",resp.status_code)
+        print("response content ------------",resp.content)
 
         token_type, access_token, expires_in = None, None, None
 
@@ -101,19 +101,19 @@ class VGGSSO:
             data - payload to be posted
         """
         url = self.api_base_url + suffix
-        print(url, "-------------url")
+        print(url,"-------------url")
         token_type, access_token = self.get_access_token()
-        print("-----------token type", token_type)
-        print("--------------access toke", access_token)
+        print("-----------token type",token_type)
+        print("--------------access toke",access_token)
 
-        headers = headers = {"Authorization": "%s %s" % (token_type, access_token), "Content-Type": "application/json",
+        headers = {"Authorization": "%s %s" % (token_type, access_token), "Content-Type": "application/json",
                              "client-id": self.client_id}
-        print("--------headers-------", headers)
+        print("--------headers-------",headers)
 
-        print("------------data------", data)
+        print("------------data------",data)
 
         resp = requests.post(url, headers=headers, data=data)
-        print("-------------resp", resp)
+        print("-------------resp",resp)
 
         return resp.status_code, resp.content
 
@@ -125,16 +125,16 @@ class VGGSSO:
             suffix - url resource name extension
             data - params to be built on url
         """
-        print("-------------suffix on get ------", suffix)
-        print("-------------data on get ------", data)
+        print("-------------suffix on get ------",suffix)
+        print("-------------data on get ------",data)
         url = "%s%s?%s" % (self.api_base_url, suffix, urllib.urlencode(data))
         print("-------------looking for url on get----------")
-        print(url, "--------------------url on get")
+        print(url,"--------------------url on get")
 
         token_type, access_token = self.get_access_token()
 
         headers = {"Authorization": "%s %s" % (token_type, access_token), "Content-Type": "application/json",
-                   "client-id": self.client_id}
+                             "client-id": self.client_id}
 
         print(headers, "--------headers on get")
 
@@ -154,8 +154,7 @@ class VGGSSO:
                            "Claims"]
 
         if not self.check_required_fields(required_fields, data):
-            return dict(status="failed", data=dict(
-                message="Check for missing required key from values [%s]" % ", ".join(required_fields)))
+            return dict(status="failed", data=dict(message="Check for missing required key from values [%s]"%", ".join(required_fields)))
 
         suffix = "/account/register"
 
@@ -172,8 +171,7 @@ class VGGSSO:
         required_fields = ["userId"]
 
         if not self.check_required_fields(required_fields, data):
-            return dict(status="failed", data=dict(
-                message="Check for missing required key from values [%s]" % ", ".join(required_fields)))
+            return dict(status="failed", data=dict(message="Check for missing required key from values [%s]"%", ".join(required_fields)))
 
         suffix = "/account/generateconfirmtoken"
 
@@ -190,8 +188,7 @@ class VGGSSO:
         required_fields = ["UserId", "Token"]
 
         if not self.check_required_fields(required_fields, data):
-            return dict(status="failed", data=dict(
-                message="Check for missing required key from values [%s]" % ", ".join(required_fields)))
+            return dict(status="failed", data=dict(message="Check for missing required key from values [%s]"%", ".join(required_fields)))
 
         suffix = "/account/confirm"
 
@@ -208,13 +205,12 @@ class VGGSSO:
         required_fields = ["FirstName", "LastName", "UserName", "Email", "PhoneNumber"]
 
         if not self.check_required_fields(required_fields, data):
-            return dict(status="failed", data=dict(
-                message="Check for missing required key from values [%s]" % ", ".join(required_fields)))
+            return dict(status="failed", data=dict(message="Check for missing required key from values [%s]"%", ".join(required_fields)))
 
         suffix = "/account/update"
 
-        print("---------suffix-----", suffix)
-        print("---------data-----", data)
+        print("---------suffix-----",suffix)
+        print("---------data-----",data)
         return self.post(suffix, data)
 
     def account_add_claims(self, data):
@@ -228,8 +224,7 @@ class VGGSSO:
         required_fields = ["UserId", "Claims"]
 
         if not self.check_required_fields(required_fields, data):
-            return dict(status="failed", data=dict(
-                message="Check for missing required key from values [%s]" % ", ".join(required_fields)))
+            return dict(status="failed", data=dict(message="Check for missing required key from values [%s]"%", ".join(required_fields)))
 
         suffix = "/account/addclaims"
 
@@ -246,8 +241,7 @@ class VGGSSO:
         required_fields = ["UserId", "Claims"]
 
         if not self.check_required_fields(required_fields, data):
-            return dict(status="failed", data=dict(
-                message="Check for missing required key from values [%s]" % ", ".join(required_fields)))
+            return dict(status="failed", data=dict(message="Check for missing required key from values [%s]"%", ".join(required_fields)))
 
         suffix = "/account/removeclaims"
 
@@ -264,8 +258,7 @@ class VGGSSO:
         required_fields = ["UserId", "Token", "NewPassword"]
 
         if not self.check_required_fields(required_fields, data):
-            return dict(status="failed", data=dict(
-                message="Check for missing required key from values [%s]" % ", ".join(required_fields)))
+            return dict(status="failed", data=dict(message="Check for missing required key from values [%s]"%", ".join(required_fields)))
 
         suffix = "/account/resetpassword"
 
@@ -282,8 +275,7 @@ class VGGSSO:
         required_fields = ["UserId", "CurrentPassword", "NewPassword"]
 
         if not self.check_required_fields(required_fields, data):
-            return dict(status="failed", data=dict(
-                message="Check for missing required key from values [%s]" % ", ".join(required_fields)))
+            return dict(status="failed", data=dict(message="Check for missing required key from values [%s]"%", ".join(required_fields)))
 
         suffix = "/account/changepassword"
 
@@ -300,8 +292,7 @@ class VGGSSO:
         required_fields = ["Type", "Value"]
 
         if not self.check_required_fields(required_fields, data):
-            return dict(status="failed", data=dict(
-                message="Check for missing required key from values [%s]" % ", ".join(required_fields)))
+            return dict(status="failed", data=dict(message="Check for missing required key from values [%s]"%", ".join(required_fields)))
 
         suffix = "/account/usersbyclaim"
 
@@ -318,8 +309,7 @@ class VGGSSO:
         required_fields = ["email"]
 
         if not self.check_required_fields(required_fields, raw_data):
-            return dict(status="failed", data=dict(
-                message="Check for missing required key from values [%s]" % ", ".join(required_fields)))
+            return dict(status="failed", data=dict(message="Check for missing required key from values [%s]"%", ".join(required_fields)))
 
         suffix = "/account/forgotpassword"
 
@@ -338,8 +328,7 @@ class VGGSSO:
         required_fields = ["userId"]
 
         if not self.check_required_fields(required_fields, raw_data):
-            return dict(status="failed", data=dict(
-                message="Check for missing required key from values [%s]" % ", ".join(required_fields)))
+            return dict(status="failed", data=dict(message="Check for missing required key from values [%s]"%", ".join(required_fields)))
 
         suffix = "/account/getuser"
 
@@ -358,8 +347,7 @@ class VGGSSO:
         required_fields = ["email"]
 
         if not self.check_required_fields(required_fields, raw_data):
-            return dict(status="failed", data=dict(
-                message="Check for missing required key from values [%s]" % ", ".join(required_fields)))
+            return dict(status="failed", data=dict(message="Check for missing required key from values [%s]"%", ".join(required_fields)))
 
         suffix = "/account/getuserbyemail"
 
@@ -382,11 +370,11 @@ class VGGSSO:
                 "pageSize": raw_data.get("pageSize", 50)}
 
         # Handle blank value for key letter on url, because it breaks the flow
-        if raw_data.get("letter", None):
-            data["letter"] = raw_data.get("letter", "")
+        if raw_data.get("letter",None):
+            data["letter"]=raw_data.get("letter","")
 
-        print(data, "------------data")
-        print(suffix, "------------suffix")
+        print(data,"------------data")
+        print(suffix,"------------suffix")
 
         return self.get(suffix, data)
 
@@ -401,8 +389,7 @@ class VGGSSO:
         required_fields = ["userId"]
 
         if not self.check_required_fields(required_fields, raw_data):
-            return dict(status="failed", data=dict(
-                message="Check for missing required key from values [%s]" % ", ".join(required_fields)))
+            return dict(status="failed", data=dict(message="Check for missing required key from values [%s]"%", ".join(required_fields)))
 
         suffix = "/account/userclaims"
 
@@ -421,8 +408,7 @@ class VGGSSO:
         required_fields = ["userId"]
 
         if not self.check_required_fields(required_fields, raw_data):
-            return dict(status="failed", data=dict(
-                message="Check for missing required key from values [%s]" % ", ".join(required_fields)))
+            return dict(status="failed", data=dict(message="Check for missing required key from values [%s]"%", ".join(required_fields)))
 
         suffix = "/account/lock"
 
@@ -441,8 +427,7 @@ class VGGSSO:
         required_fields = ["userId"]
 
         if not self.check_required_fields(required_fields, raw_data):
-            return dict(status="failed", data=dict(
-                message="Check for missing required key from values [%s]" % ", ".join(required_fields)))
+            return dict(status="failed", data=dict(message="Check for missing required key from values [%s]"%", ".join(required_fields)))
 
         suffix = "/account/unlock"
 
@@ -461,8 +446,7 @@ class VGGSSO:
         required_fields = ["userId"]
 
         if not self.check_required_fields(required_fields, raw_data):
-            return dict(status="failed", data=dict(
-                message="Check for missing required key from values [%s]" % ", ".join(required_fields)))
+            return dict(status="failed", data=dict(message="Check for missing required key from values [%s]"%", ".join(required_fields)))
 
         suffix = "/account/enabletwofactor"
 
@@ -481,8 +465,7 @@ class VGGSSO:
         required_fields = ["userId"]
 
         if not self.check_required_fields(required_fields, raw_data):
-            return dict(status="failed", data=dict(
-                message="Check for missing required key from values [%s]" % ", ".join(required_fields)))
+            return dict(status="failed", data=dict(message="Check for missing required key from values [%s]"%", ".join(required_fields)))
 
         suffix = "/account/disabletwofactor"
 
@@ -501,8 +484,7 @@ class VGGSSO:
         required_fields = ["userId"]
 
         if not self.check_required_fields(required_fields, raw_data):
-            return dict(status="failed", data=dict(
-                message="Check for missing required key from values [%s]" % ", ".join(required_fields)))
+            return dict(status="failed", data=dict(message="Check for missing required key from values [%s]"%", ".join(required_fields)))
 
         suffix = "/account/validateuser"
 
@@ -533,8 +515,7 @@ class VGGSSO:
         required_fields = ["userId"]
 
         if not self.check_required_fields(required_fields, raw_data):
-            return dict(status="failed", data=dict(
-                message="Check for missing required key from values [%s]" % ", ".join(required_fields)))
+            return dict(status="failed", data=dict(message="Check for missing required key from values [%s]"%", ".join(required_fields)))
 
         suffix = "/account/clearance"
 
@@ -553,8 +534,7 @@ class VGGSSO:
         required_fields = ["code"]
 
         if not self.check_required_fields(required_fields, raw_data):
-            return dict(status="failed", data=dict(
-                message="Check for missing required key from values [%s]" % ", ".join(required_fields)))
+            return dict(status="failed", data=dict(message="Check for missing required key from values [%s]"%", ".join(required_fields)))
 
         suffix = "/account/verifyotp"
 
