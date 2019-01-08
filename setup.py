@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='python_sso',
-    version='1.0.1',
+    version='1.0.3',
     packages=['python_sso'],
     url='https://github.com/kunsam002/python_sso',
     license='',
