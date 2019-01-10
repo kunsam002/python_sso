@@ -12,7 +12,7 @@ pip install vgg_sso
 
 ## Usage
 
-Setup the folowing variables to enable access to the SSO Application Server
+Setup the folowing configuration variables to enable access to the SSO Application Server
 
 ```python
 # In the config.py file
