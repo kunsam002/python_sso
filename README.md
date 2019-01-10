@@ -1,6 +1,6 @@
 # Venture Garden Group (Vibranium Valley) Single Sign On (SSO) Library
 
-VGGSSO is a custom SSO (Single Sign On) library to be used by all (Strategic Business Units) SBUs for authentication and authorization within the VGG eco-system.
+VGGSSO is a custom SSO (Single Sign On) library to be used by all (Strategic Business Units) SBUs, for authentication and authorization within the VGG eco-system connecting with the SSO Identity Server.
 
 ## Installation
 
