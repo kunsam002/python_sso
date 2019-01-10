@@ -33,7 +33,6 @@ class VGGSSO:
 
         # Checks for previously generated access token and the validity of the access token
         if self.token_expiration and self.token_type and self.access_token and self.token_expiration > time_now:
-            print("----------- token yet to expire---------")
             return self.token_type, self.access_token
 
         key = '%s:%s' % (self.client_id, self.client_secret)
@@ -405,9 +404,6 @@ class VGGSSO:
         # Handle blank value for key letter on url, because it breaks the flow
         if raw_data.get("letter", None):
             data["letter"] = raw_data.get("letter", "")
-
-        print(data, "------------data")
-        print(suffix, "------------suffix")
 
         return self.get(suffix, data)
 
