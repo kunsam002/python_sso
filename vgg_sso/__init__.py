@@ -132,13 +132,17 @@ class VGGSSO:
         except Exception as e:
             return 403, {"error": "%s" % e}
 
+        print("--------------type(resp.content)-----------",type(resp.content))
         resp_cont = {}
         if type(resp.content) == str:
+            print("---------type is string------------")
             try:
                 resp_cont = json.loads(resp.content)
             except:
+                print("------------failed conversion tyee is string------------")
                 resp_cont = resp.content
         else:
+            print("-------------type not string--------------")
             resp_cont = resp.content
 
         return resp.status_code, resp_cont
