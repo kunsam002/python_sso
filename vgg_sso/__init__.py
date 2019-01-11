@@ -141,6 +141,13 @@ class VGGSSO:
             except:
                 print("------------failed conversion tyee is string------------")
                 resp_cont = resp.content
+        elif type(resp.content) ==bytes:
+            print("---------------types is bytes-----------")
+            try:
+                resp_cont=str(resp.content).decode("utf-8")
+            except:
+                print("---------------faile d conversion type is bytes=-------------")
+                resp_cont = resp.content
         else:
             print("-------------type not string--------------")
             resp_cont = resp.content
