@@ -15,11 +15,11 @@ pip install vgg_sso
 Setup the folowing configuration variables to enable access to the SSO Application Server
 
 ```python
-# In the config.py file
+# In the config.py / settings.py file
 
-VGG_SSO_CLIENT_ID = "python_sso_ro"
-VGG_SSO_CLIENT_SECRET = "PythonSSORO"
-VGG_SSO_CLIENT_USERNAME = "olukunle.ogunmokun@venturegardengroup.com"
+VGG_SSO_CLIENT_ID = "clientId"
+VGG_SSO_CLIENT_SECRET = "clientSecret"
+VGG_SSO_CLIENT_USERNAME = "johndoe@hotyahmail.com"
 VGG_SSO_CLIENT_PASSWORD = "P@ssw0rd"
 ```
 
@@ -28,7 +28,10 @@ Initialization of the library with respective python application
 ```python
 from vgg_sso import VGGSSO
 
-vgg_sso = VGGSSO(app)
+# Set debug as True for staging environment and False for production environment
+# Set config_data to be a dictionary with keys representing the configuration variables 
+
+vgg_sso = VGGSSO(debug=True, config_data={})
 ```
 
 ## Contributing
