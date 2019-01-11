@@ -58,7 +58,8 @@ class VGGSSO:
             return self.token_type, self.access_token
 
         key = '%s:%s' % (self.client_id, self.client_secret)
-        auth_key = base64.b64encode(bytes(key))
+        print("-----------------key-------",key)
+        auth_key = base64.b64encode(bytes(key.encode()))
 
         headers = {"Authorization": "Basic %s" % auth_key, "Content-Type": "application/x-www-form-urlencoded"}
 
@@ -69,10 +70,13 @@ class VGGSSO:
             "scope": "openid profile identity-server-api"
         }
 
+        print(self.token_url,"----------------token URL")
+        print(headers,"----------------headers")
         resp = requests.post(self.token_url, headers=headers, data=data)
 
         token_type, access_token, expires_in = None, None, None
-
+        print("---------token type",token_type)
+        print("---------access type",access_token)
         # On success response
         if resp.status_code in [200, 201]:
             resp_content = json.loads(resp.content)
@@ -87,6 +91,9 @@ class VGGSSO:
 
         self.token_type = token_type
         self.access_token = access_token
+
+        print("---------token type",token_type)
+        print("---------access type",access_token)
 
         return token_type, access_token
 
@@ -175,11 +182,14 @@ class VGGSSO:
         required_fields = ["FirstName", "LastName", "UserName", "Email", "Password", "PhoneNumber",
                            "Claims"]
 
+        print("------------required fields--------",required_fields)
         if not self.check_required_fields(required_fields, data):
             return dict(status="failed", data=dict(
                 message="Check for missing required key from values [%s]" % ", ".join(required_fields)))
 
         suffix = "/account/register"
+
+        print("-------------register data------------",data)
 
         return self.post(suffix, data)
 
