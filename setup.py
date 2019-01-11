@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='vgg_sso',
-    version='1.0.4',
+    version='1.0.5',
     packages=['vgg_sso'],
     url='https://github.com/kunsam002/python_sso',
     license='',
