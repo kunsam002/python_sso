@@ -59,9 +59,9 @@ class VGGSSO:
 
         key = '%s:%s' % (self.client_id, self.client_secret)
         print("-----------------key-------", key)
-        print("-----------------keyver ocnverison change con-------", key)
+        print("-----------------keyver ocnverison hjshs change con-------", key)
         # auth_key = base64.b64encode(key.encode())
-        auth_key = base64.b64encode(bytes(key))
+        auth_key = base64.b64encode(bytes(key.encode()))
 
         print("-----------trying yo decovde byte t o string--------")
         headers = {"Authorization": "Basic %s" %str(auth_key.decode("utf-8")), "Content-Type": "application/x-www-form-urlencoded"}
