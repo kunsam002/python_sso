@@ -7,20 +7,42 @@ import urllib
 
 
 class VGGSSO:
-    """the custom SSO (Single Sign On) object to be used by all apps for authentication and authorization
-    within the VGG eco-system"""
+    """
+    The custom SSO (Single Sign On) object to be used by all apps for authentication and authorization
+    within the VGG eco-system
+    """
 
-    def __init__(self, app, client_id=None, client_secret=None, client_username=None, client_password=None):
-        self.app = app
-        self.client_id = client_id if client_id else self.app.config.get("VGG_SSO_CLIENT_ID", None)
-        self.client_secret = client_secret if client_secret else self.app.config.get("VGG_SSO_CLIENT_SECRET", None)
-        self.client_username = client_username if client_username else self.app.config.get("VGG_SSO_CLIENT_USERNAME",
-                                                                                           None)
-        self.client_password = client_password if client_password else self.app.config.get("VGG_SSO_CLIENT_PASSWORD",
-                                                                                           None)
+    def __init__(self, debug=True, config_data={}):
+        self.client_id = config_data.get("VGG_SSO_CLIENT_ID",None)
+        self.client_secret = config_data.get("VGG_SSO_CLIENT_SECRET",None)
+        self.client_username = config_data.get("VGG_SSO_CLIENT_USERNAME",None)
+        self.client_password = config_data.get("VGG_SSO_CLIENT_PASSWORD",None)
+        self.debug = debug
 
-        self.token_url = app.config.get("VGG_SSO_TOKEN_URL", "http://sso.test.vggdev.com/identity/connect/token")
-        self.api_base_url = app.config.get("VGG_SSO_API_BASE_URL", "https://ssoapi.test.vggdev.com")
+        # Check to validate the a value was provided for VGG_SSO_CLIENT_ID
+        if not self.client_id:
+            raise Exception("Invalid VGG_SSO_CLIENT_ID provided")
+
+        # Check to validate the a value was provided for VGG_SSO_CLIENT_SECRET
+        if not self.client_secret:
+            raise Exception("Invalid VGG_SSO_CLIENT_SECRET provided")
+
+        # Check to validate the a value was provided for VGG_SSO_CLIENT_USERNAME
+        if not self.client_username:
+            raise Exception("Invalid VGG_SSO_CLIENT_USERNAME provided")
+
+        # Check to validate the a value was provided for VGG_SSO_CLIENT_PASSWORD
+        if not self.client_password:
+            raise Exception("Invalid VGG_SSO_CLIENT_PASSWORD provided")
+
+        """
+        Checks to validate if library is being used on staging or production environment. Default set as True
+        debug = True representing staging environment
+        debug = False representing production environment
+        """
+        if self.debug:
+            self.token_url = "http://sso.test.vggdev.com/identity/connect/token"
+            self.api_base_url = "https://ssoapi.test.vggdev.com"
 
         self.token_type = None
         self.access_token = None
