@@ -61,8 +61,9 @@ class VGGSSO:
         print("-----------------key-------", key)
         auth_key = base64.b64encode(key.encode())
 
-        headers = {"Authorization": "Basic " + str(auth_key), "Content-Type": "application/x-www-form-urlencoded"}
-
+        print("-----------trying yo decovde byte t o string--------")
+        headers = {"Authorization": "Basic %s" %str(auth_key.decode("utf-8")), "Content-Type": "application/x-www-form-urlencoded"}
+        print("----------------headres-------",headers)
         data = {
             "grant_type": "password",
             "username": self.client_username,
@@ -70,6 +71,7 @@ class VGGSSO:
             "scope": "openid profile identity-server-api"
         }
 
+        print("--------access token data-------",data)
         print(self.token_url, "----------------token URL")
         print(headers, "----------------headers")
         resp = requests.post(self.token_url, headers=headers, data=data)
