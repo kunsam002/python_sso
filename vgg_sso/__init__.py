@@ -61,7 +61,7 @@ class VGGSSO:
         print("-----------------key-------",key)
         auth_key = base64.b64encode(key.encode())
 
-        headers = {"Authorization": "Basic %s" % auth_key, "Content-Type": "application/x-www-form-urlencoded"}
+        headers = {"Authorization": "Basic "+ auth_key, "Content-Type": "application/x-www-form-urlencoded"}
 
         data = {
             "grant_type": "password",
