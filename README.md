@@ -31,7 +31,14 @@ from vgg_sso import VGGSSO
 # Set debug as True for staging environment and False for production environment
 # Set config_data to be a dictionary with keys representing the configuration variables 
 
-vgg_sso = VGGSSO(debug=True, config_data={})
+config_data=dict(
+    VGG_SSO_CLIENT_ID = "clientId",
+    VGG_SSO_CLIENT_SECRET = "clientSecret",
+    VGG_SSO_CLIENT_USERNAME = "johndoe@hotyahmail.com",
+    VGG_SSO_CLIENT_PASSWORD = "P@ssw0rd"
+)
+
+vgg_sso = VGGSSO(debug=True, config_data=config_data)
 ```
 
 ## Contributing
