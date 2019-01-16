@@ -6,18 +6,16 @@ import json
 import urllib
 
 
-class VGGSSO:
-    """
-    The custom SSO (Single Sign On) object to be used by all apps for authentication and authorization
-    within the VGG eco-system
-    """
-
+class SSOAccess:
     def __init__(self, debug=True, config_data={}):
         self.client_id = config_data.get("VGG_SSO_CLIENT_ID", None)
         self.client_secret = config_data.get("VGG_SSO_CLIENT_SECRET", None)
+        self.client_ro_id = config_data.get("VGG_SSO_CLIENT_RO_ID", None)
+        self.client_ro_secret = config_data.get("VGG_SSO_CLIENT_RO_SECRET", None)
         self.client_username = config_data.get("VGG_SSO_CLIENT_USERNAME", None)
         self.client_password = config_data.get("VGG_SSO_CLIENT_PASSWORD", None)
         self.debug = debug
+        self.actor = "cc"
 
         # Check to validate the a value was provided for VGG_SSO_CLIENT_ID
         if not self.client_id:
@@ -27,13 +25,13 @@ class VGGSSO:
         if not self.client_secret:
             raise Exception("Invalid VGG_SSO_CLIENT_SECRET provided")
 
-        # Check to validate the a value was provided for VGG_SSO_CLIENT_USERNAME
-        if not self.client_username:
-            raise Exception("Invalid VGG_SSO_CLIENT_USERNAME provided")
-
-        # Check to validate the a value was provided for VGG_SSO_CLIENT_PASSWORD
-        if not self.client_password:
-            raise Exception("Invalid VGG_SSO_CLIENT_PASSWORD provided")
+        # # Check to validate the a value was provided for VGG_SSO_CLIENT_USERNAME
+        # if not self.client_username:
+        #     raise Exception("Invalid VGG_SSO_CLIENT_USERNAME provided")
+        #
+        # # Check to validate the a value was provided for VGG_SSO_CLIENT_PASSWORD
+        # if not self.client_password:
+        #     raise Exception("Invalid VGG_SSO_CLIENT_PASSWORD provided")
 
         """
         Checks to validate if library is being used on staging or production environment. Default set as True
@@ -44,43 +42,54 @@ class VGGSSO:
             self.token_url = "http://sso.test.vggdev.com/identity/connect/token"
             self.api_base_url = "https://ssoapi.test.vggdev.com"
 
+        self.client_token_type = None
+        self.client_access_token = None
+        self.client_token_expiration = None
+
         self.token_type = None
         self.access_token = None
         self.token_expiration = None
 
-    def get_access_token(self):
+    def get_access_token(self, obj_client_username=None, obj_client_password=None):
         """ logic for the get access token function """
 
         time_now = datetime.now()
 
         # Checks for previously generated access token and the validity of the access token
-        if self.token_expiration and self.token_type and self.access_token and self.token_expiration > time_now:
-            return self.token_type, self.access_token
+        if self.actor == "ro" and self.token_expiration and self.token_type and self.access_token and self.token_expiration > time_now:
+            return dict(token_type=self.token_type, access_token=self.access_token)
 
-        key = '%s:%s' % (self.client_id, self.client_secret)
-        print("-----------------key-------", key)
-        print("-----------------keyver ocnverison hjshs change con-------", key)
-        # auth_key = base64.b64encode(key.encode())
+        # Checks for previously generated access token and the validity of the access token
+        if self.actor == "cc" and self.client_token_expiration and self.client_token_type and self.client_access_token and self.client_token_expiration > time_now:
+            return dict(token_type=self.client_token_type, access_token=self.client_access_token)
+
+        key = ""
+
+        if self.actor == "ro":
+            key = '%s:%s' % (self.client_ro_id, self.client_ro_secret)
+        if self.actor == "cc":
+            key = '%s:%s' % (self.client_id, self.client_secret)
+
         auth_key = base64.b64encode(bytes(key.encode()))
 
-        print("-----------trying yo decovde byte t o string--------")
-        headers = {"Authorization": "Basic %s" %str(auth_key.decode("utf-8")), "Content-Type": "application/x-www-form-urlencoded"}
-        print("----------------headres-------",headers)
+        headers = {"Authorization": "Basic %s" % str(auth_key.decode("utf-8")),
+                   "Content-Type": "application/x-www-form-urlencoded"}
+
         data = {
-            "grant_type": "password",
-            "username": self.client_username,
-            "password": self.client_password,
-            "scope": "openid profile identity-server-api"
+            "grant_type": "password" if self.actor == "ro" else "client_credentials",
+            "username": obj_client_username if obj_client_username else self.client_username,
+            "password": obj_client_password if obj_client_password else self.client_password,
+            "scope": "openid profile identity-server-api" if self.actor == "ro" else "identity-server-api"
         }
 
-        print("--------access token data-------",data)
-        print(self.token_url, "----------------token URL")
-        print(headers, "----------------headers")
+        if self.actor == "cc":
+            data.pop("username")
+            data.pop("password")
+
         resp = requests.post(self.token_url, headers=headers, data=data)
 
-        token_type, access_token, expires_in = None, None, None
-        print("---------token type", token_type)
-        print("---------access type", access_token)
+        token_type, access_token, expires_in, token_expiration = None, None, None, None
+
         # On success response
         if resp.status_code in [200, 201]:
             resp_content = json.loads(resp.content)
@@ -91,15 +100,32 @@ class VGGSSO:
         if expires_in:
             expires_in_min = expires_in / 60
             token_expiration = time_now + timedelta(minutes=expires_in_min - 1)
+
+        if self.actor == "ro":
             self.token_expiration = token_expiration
+            self.token_type = token_type
+            self.access_token = access_token
 
-        self.token_type = token_type
-        self.access_token = access_token
+        if self.actor == "cc":
+            self.client_token_expiration = token_expiration
+            self.client_token_type = token_type
+            self.client_access_token = access_token
 
-        print("---------token type", token_type)
-        print("---------access type", access_token)
+        return dict(code=resp.status_code, content=resp.content, token_type=token_type,
+                    token_expiration=token_expiration, access_token=access_token)
 
-        return token_type, access_token
+
+class VGGSSO(SSOAccess):
+    """
+    The custom SSO (Single Sign On) object to be used by all apps for authentication and authorization
+    within the VGG eco-system
+    """
+
+    @staticmethod
+    def binary_to_dict(the_binary):
+        jsn = ''.join(chr(int(x, 2)) for x in the_binary.split())
+        d = json.loads(jsn)
+        return d
 
     @staticmethod
     def check_required_fields(fields, data):
@@ -115,6 +141,27 @@ class VGGSSO:
 
         return True
 
+    def login(self, username=None, password=None):
+        self.actor = "ro"
+        time_now = datetime.now()
+
+        if self.token_expiration and self.token_type and self.access_token and self.token_expiration > time_now:
+            pass
+        else:
+            if None in [username, password]:
+                raise Exception("Kindly provide a valid username and password")
+
+            token_resp = self.get_access_token(obj_client_username=username, obj_client_password=password)
+
+            token_type, token_expiration, access_token = token_resp.get("token_type", None), token_resp.get(
+                "token_expiration", None), token_resp.get("access_token", None)
+
+            self.token_type = token_type
+            self.token_expiration = token_expiration
+            self.access_token = access_token
+
+        return self.token_type, self.access_token
+
     def post(self, suffix, payload):
         """
         handles every post request by the class object as well as process post response
@@ -123,36 +170,51 @@ class VGGSSO:
             suffix - url resource name extension
             payload - payload to be posted
         """
+
         url = self.api_base_url + suffix
-        token_type, access_token = self.get_access_token()
+
+        if self.actor == "ro":
+            token_type, access_token = self.login()
+        elif self.actor == "cc":
+            token_resp = self.get_access_token()
+            token_type, token_expiration, access_token = token_resp.get("token_type", None), token_resp.get(
+                "token_expiration", None), token_resp.get("access_token", None)
+
+        else:
+            token_type, access_token = None, None
 
         headers = {"Authorization": "%s %s" % (token_type, access_token), "Content-Type": "application/json",
-                   "client-id": self.client_id}
+                   "client-id": self.client_ro_id}
 
         try:
             resp = requests.post(url, headers=headers, data=json.dumps(payload))
         except Exception as e:
             return 403, {"error": "%s" % e}
 
-        print("--------------type(resp.content)-----------",type(resp.content))
-        resp_cont = {}
-        if type(resp.content) == str:
-            print("---------type is string------------")
+        resp_cont = resp.content
+        if type(resp_cont) == str:
             try:
-                resp_cont = json.loads(resp.content)
+                resp_cont = json.loads(resp_cont)
             except:
-                print("------------failed conversion tyee is string------------")
-                resp_cont = resp.content
-        elif type(resp.content) ==bytes:
-            print("---------------types is bytes-----------")
+                pass
+        elif type(resp_cont) == bytes:
             try:
-                resp_cont=str(resp.content).decode("utf-8")
+                resp_cont = self.binary_to_dict(resp_cont)
             except:
-                print("---------------faile d conversion type is bytes=-------------")
-                resp_cont = resp.content
+                pass
+
+        elif type(resp_cont) in [str, bytes]:
+            try:
+                resp_cont = json.loads(resp_cont.decode())
+            except:
+                pass
         else:
-            print("-------------type not string--------------")
-            resp_cont = resp.content
+            pass
+
+        try:
+            resp_cont = json.loads(resp_cont)
+        except:
+            pass
 
         return resp.status_code, resp_cont
 
@@ -164,25 +226,51 @@ class VGGSSO:
             suffix - url resource name extension
             data - params to be built on url
         """
-        url = "%s%s?%s" % (self.api_base_url, suffix, urllib.urlencode(data))
-        token_type, access_token = self.get_access_token()
+        self.actor == "ro"
+        url = "%s%s?%s" % (self.api_base_url, suffix, urllib.parse.urlencode(data))
+
+        if self.actor == "ro":
+            token_type, access_token = self.login()
+        elif self.actor == "cc":
+            token_resp = self.get_access_token()
+            token_type, token_expiration, access_token = token_resp.get("token_type", None), token_resp.get(
+                "token_expiration", None), token_resp.get("access_token", None)
+
+        else:
+            token_type, access_token = None, None
 
         headers = {"Authorization": "%s %s" % (token_type, access_token), "Content-Type": "application/json",
-                   "client-id": self.client_id}
+                   "client-id": self.client_ro_id}
 
         try:
             resp = requests.get(url, headers=headers)
         except Exception as e:
             return 403, {"error": "%s" % e}
 
-        resp_cont = {}
-        if type(resp.content) == str:
+        resp_cont = resp.content
+        if type(resp_cont) == str:
             try:
-                resp_cont = json.loads(resp.content)
+                resp_cont = json.loads(resp_cont)
             except:
-                resp_cont = resp.content
+                pass
+        elif type(resp_cont) == bytes:
+            try:
+                resp_cont = self.binary_to_dict(resp_cont)
+            except:
+                pass
+
+        elif type(resp_cont) in [str, bytes]:
+            try:
+                resp_cont = json.loads(resp_cont.decode())
+            except:
+                pass
         else:
-            resp_cont = resp.content
+            pass
+
+        try:
+            resp_cont = json.loads(resp_cont)
+        except:
+            pass
 
         return resp.status_code, resp_cont
 
@@ -193,18 +281,54 @@ class VGGSSO:
         params:
             data - payload to be posted
         """
-
+        self.actor = "cc"
         required_fields = ["FirstName", "LastName", "UserName", "Email", "Password", "PhoneNumber",
                            "Claims"]
 
-        print("------------required fields--------", required_fields)
         if not self.check_required_fields(required_fields, data):
             return dict(status="failed", data=dict(
                 message="Check for missing required key from values [%s]" % ", ".join(required_fields)))
 
         suffix = "/account/register"
 
-        print("-------------register data------------", data)
+        return self.post(suffix, data)
+
+    def account_forgot_password(self, raw_data):
+        """
+        method to request a forgot password
+
+        params:
+            raw_data - payload to be processed before building query params
+        """
+        self.actor = "cc"
+        required_fields = ["email"]
+
+        if not self.check_required_fields(required_fields, raw_data):
+            return dict(status="failed", data=dict(
+                message="Check for missing required key from values [%s]" % ", ".join(required_fields)))
+
+        suffix = "/account/forgotpassword"
+
+        data = {"email": raw_data.get("email", "")}
+
+        return self.get(suffix, data)
+
+    def account_reset_password(self, data):
+        """
+        method to reset account password
+
+        params:
+            data - payload to be posted
+        """
+        self.actor = "cc"
+
+        required_fields = ["UserId", "Token", "NewPassword"]
+
+        if not self.check_required_fields(required_fields, data):
+            return dict(status="failed", data=dict(
+                message="Check for missing required key from values [%s]" % ", ".join(required_fields)))
+
+        suffix = "/account/resetpassword"
 
         return self.post(suffix, data)
 
@@ -215,7 +339,7 @@ class VGGSSO:
         params:
             data - payload to be posted
         """
-
+        self.actor = "ro"
         required_fields = ["userId"]
 
         if not self.check_required_fields(required_fields, data):
@@ -227,7 +351,9 @@ class VGGSSO:
         # return self.post(suffix, data)
 
         url = self.api_base_url + suffix + "?userId=%s" % data.get("userId")
-        token_type, access_token = self.get_access_token()
+        token_resp = self.get_access_token()
+        token_type, token_expiration, access_token = token_resp.get("token_type", None), token_resp.get(
+            "token_expiration", None), token_resp.get("access_token", None)
 
         headers = {"Authorization": "%s %s" % (token_type, access_token), "Content-Type": "application/json",
                    "client-id": self.client_id}
@@ -255,7 +381,7 @@ class VGGSSO:
         params:
             data - payload to be posted
         """
-
+        self.actor = "ro"
         required_fields = ["UserId", "Token"]
 
         if not self.check_required_fields(required_fields, data):
@@ -273,7 +399,7 @@ class VGGSSO:
         params:
             data - payload to be posted
         """
-
+        self.actor = "ro"
         required_fields = ["FirstName", "LastName", "UserName", "Email", "PhoneNumber"]
 
         if not self.check_required_fields(required_fields, data):
@@ -291,7 +417,7 @@ class VGGSSO:
         params:
             data - payload to be posted
         """
-
+        self.actor = "ro"
         required_fields = ["UserId", "Claims"]
 
         if not self.check_required_fields(required_fields, data):
@@ -309,6 +435,7 @@ class VGGSSO:
         params:
             data - payload to be posted
         """
+        self.actor = "ro"
 
         required_fields = ["UserId", "Claims"]
 
@@ -320,24 +447,6 @@ class VGGSSO:
 
         return self.post(suffix, data)
 
-    def account_reset_password(self, data):
-        """
-        method to reset account password
-
-        params:
-            data - payload to be posted
-        """
-
-        required_fields = ["UserId", "Token", "NewPassword"]
-
-        if not self.check_required_fields(required_fields, data):
-            return dict(status="failed", data=dict(
-                message="Check for missing required key from values [%s]" % ", ".join(required_fields)))
-
-        suffix = "/account/resetpassword"
-
-        return self.post(suffix, data)
-
     def account_change_password(self, data):
         """
         method to change account password
@@ -345,6 +454,7 @@ class VGGSSO:
         params:
             data - payload to be posted
         """
+        self.actor = "ro"
 
         required_fields = ["UserId", "CurrentPassword", "NewPassword"]
 
@@ -363,6 +473,7 @@ class VGGSSO:
         params:
             data - payload to be posted
         """
+        self.actor = "ro"
 
         required_fields = ["Type", "Value"]
 
@@ -374,26 +485,6 @@ class VGGSSO:
 
         return self.post(suffix, data)
 
-    def account_forgot_password(self, raw_data):
-        """
-        method to request a forgot password
-
-        params:
-            raw_data - payload to be processed before building query params
-        """
-
-        required_fields = ["email"]
-
-        if not self.check_required_fields(required_fields, raw_data):
-            return dict(status="failed", data=dict(
-                message="Check for missing required key from values [%s]" % ", ".join(required_fields)))
-
-        suffix = "/account/forgotpassword"
-
-        data = {"email": raw_data.get("email", "")}
-
-        return self.get(suffix, data)
-
     def account_get_user(self, raw_data):
         """
         method to get an individual user record by userId
@@ -401,7 +492,7 @@ class VGGSSO:
         params:
             raw_data - payload to be processed before building query params
         """
-
+        self.actor = "ro"
         required_fields = ["userId"]
 
         if not self.check_required_fields(required_fields, raw_data):
@@ -421,6 +512,7 @@ class VGGSSO:
         params:
             raw_data - payload to be processed before building query params
         """
+        self.actor = "ro"
 
         required_fields = ["email"]
 
@@ -442,7 +534,7 @@ class VGGSSO:
         params:
             raw_data - payload to be processed before building query params
         """
-
+        self.actor = "ro"
         suffix = "/account/getusers"
 
         data = {"pageNo": raw_data.get("pageNo", 1),
@@ -461,6 +553,7 @@ class VGGSSO:
         params:
             raw_data - payload to be processed before building query params
         """
+        self.actor = "ro"
 
         required_fields = ["userId"]
 
@@ -481,6 +574,7 @@ class VGGSSO:
         params:
             raw_data - payload to be processed before building query params
         """
+        self.actor = "ro"
 
         required_fields = ["userId"]
 
@@ -501,6 +595,7 @@ class VGGSSO:
         params:
             raw_data - payload to be processed before building query params
         """
+        self.actor = "ro"
 
         required_fields = ["userId"]
 
@@ -521,6 +616,7 @@ class VGGSSO:
         params:
             raw_data - payload to be processed before building query params
         """
+        self.actor = "ro"
 
         required_fields = ["userId"]
 
@@ -541,6 +637,7 @@ class VGGSSO:
         params:
             raw_data - payload to be processed before building query params
         """
+        self.actor = "ro"
 
         required_fields = ["userId"]
 
@@ -561,6 +658,7 @@ class VGGSSO:
         params:
             raw_data - payload to be processed before building query params
         """
+        self.actor = "ro"
 
         required_fields = ["userId"]
 
@@ -581,6 +679,7 @@ class VGGSSO:
         params:
             data - payload to be processed before building query params
         """
+        self.actor = "ro"
 
         suffix = "/account/anonymous"
 
@@ -593,6 +692,7 @@ class VGGSSO:
         params:
             raw_data - payload to be processed before building query params
         """
+        self.actor = "ro"
 
         required_fields = ["userId"]
 
@@ -613,6 +713,7 @@ class VGGSSO:
         params:
             raw_data - payload to be processed before building query params
         """
+        self.actor = "ro"
 
         required_fields = ["code"]
 

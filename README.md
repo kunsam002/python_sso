@@ -17,10 +17,11 @@ Setup the folowing configuration variables to enable access to the SSO Applicati
 ```python
 # In the config.py / settings.py file
 
-VGG_SSO_CLIENT_ID = "clientId"
-VGG_SSO_CLIENT_SECRET = "clientSecret"
-VGG_SSO_CLIENT_USERNAME = "johndoe@hotyahmail.com"
-VGG_SSO_CLIENT_PASSWORD = "P@ssw0rd"
+VGG_SSO_CLIENT_ID="clientId",
+VGG_SSO_CLIENT_SECRET="clientSecret",
+VGG_SSO_CLIENT_RO_ID="clientResourceOwnerId",
+VGG_SSO_CLIENT_RO_SECRET="clientResourceOwnerSecret"
+
 ```
 
 Initialization of the library with respective python application
@@ -31,11 +32,11 @@ from vgg_sso import VGGSSO
 # Set debug as True for staging environment and False for production environment
 # Set config_data to be a dictionary with keys representing the configuration variables 
 
-config_data=dict(
-    VGG_SSO_CLIENT_ID = "clientId",
-    VGG_SSO_CLIENT_SECRET = "clientSecret",
-    VGG_SSO_CLIENT_USERNAME = "johndoe@hotyahmail.com",
-    VGG_SSO_CLIENT_PASSWORD = "P@ssw0rd"
+config_data = dict(
+    VGG_SSO_CLIENT_ID="clientId",
+    VGG_SSO_CLIENT_SECRET="clientSecret",
+    VGG_SSO_CLIENT_RO_ID="clientResourceOwnerId",
+    VGG_SSO_CLIENT_RO_SECRET="clientResourceOwnerSecret"
 )
 
 vgg_sso = VGGSSO(debug=True, config_data=config_data)
