@@ -7,7 +7,7 @@ VGGSSO is a custom SSO (Single Sign On) library to be used by all (Strategic Bus
 Use the package manager [pip](https://pip.pypa.io/en/stable/) to install vgg_sso.
 
 ```bash
-pip install vgg_sso
+pip install vgg-sso
 ```
 
 ## Usage
