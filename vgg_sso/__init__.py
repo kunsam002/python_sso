@@ -8,7 +8,7 @@ import urllib
 
 class SSOAccess:
     """
-    The custom object to be handle access calls and requests to the SSO Identity Server
+    The custom object to handle access calls and requests to the SSO Identity Server
     """
 
     def __init__(self, debug=True, config_data={}):
@@ -88,13 +88,19 @@ class SSOAccess:
 
         resp = requests.post(self.token_url, headers=headers, data=data)
 
-        token_type, access_token, expires_in, token_expiration = None, None, None, None
+        token_type, access_token, expires_in, token_expiration, error = None, None, None, None, None
+
+        try:
+            resp_content = json.loads(resp.content)
+        except:
+            resp_content = resp.content
 
         # On success response
         if resp.status_code in [200, 201]:
-            resp_content = json.loads(resp.content)
-            token_type, access_token, expires_in = resp_content.get("token_type"), resp_content.get(
-                "access_token"), resp_content.get("expires_in")
+            token_type, access_token, expires_in = resp_content.get("token_type", None), resp_content.get(
+                "access_token", None), resp_content.get("expires_in", None)
+        else:
+            error = resp_content.get("error", None)
 
         # Calculating the access_token expiration and saving to session for subsequent requests
         if expires_in:
@@ -118,7 +124,7 @@ class SSOAccess:
             self.client_access_token = access_token
 
         return dict(code=resp.status_code, content=resp.content, token_type=token_type,
-                    token_expiration=token_expiration, access_token=access_token)
+                    token_expiration=token_expiration, access_token=access_token, error=error)
 
 
 class VGGSSO(SSOAccess):
@@ -188,6 +194,10 @@ class VGGSSO(SSOAccess):
 
         time_now = datetime.now()
 
+        error = None
+        token_resp = {"error": error, "token_expiration": self.token_expiration, "token_type": self.token_type,
+                      "access_token": self.access_token}
+
         # Checks if there is an already existing token and if the token is still valid and yet to expire
         if self.token_expiration and self.token_type and self.access_token and self.token_expiration > time_now:
             pass
@@ -201,14 +211,14 @@ class VGGSSO(SSOAccess):
             # Calls get access token to re-generate an access token to the particular user via the resource owner
             token_resp = self.get_access_token(obj_client_username=username, obj_client_password=password)
 
-            token_type, token_expiration, access_token = token_resp.get("token_type", None), token_resp.get(
-                "token_expiration", None), token_resp.get("access_token", None)
+            token_type, token_expiration, access_token, error = token_resp.get("token_type", None), token_resp.get(
+                "token_expiration", None), token_resp.get("access_token", None), token_resp.get("error", None)
 
             self.token_type = token_type
             self.token_expiration = token_expiration
             self.access_token = access_token
 
-        return self.token_type, self.access_token
+        return token_resp
 
     def post(self, suffix, payload):
         """
@@ -223,7 +233,9 @@ class VGGSSO(SSOAccess):
 
         # Checks access point actors to better determine how to get access token
         if self.actor == "ro":
-            token_type, access_token = self.login()
+            token_resp = self.login()
+            token_type, token_expiration, access_token, error = token_resp.get("token_type", None), token_resp.get(
+                "token_expiration", None), token_resp.get("access_token", None), token_resp.get("error", None)
         elif self.actor == "cc":
             token_resp = self.get_access_token()
             token_type, token_expiration, access_token = token_resp.get("token_type", None), token_resp.get(
@@ -262,7 +274,9 @@ class VGGSSO(SSOAccess):
 
         # Checks access point actors to better determine how to get access token
         if self.actor == "ro":
-            token_type, access_token = self.login()
+            token_resp = self.login()
+            token_type, token_expiration, access_token, error = token_resp.get("token_type", None), token_resp.get(
+                "token_expiration", None), token_resp.get("access_token", None), token_resp.get("error", None)
         elif self.actor == "cc":
             token_resp = self.get_access_token()
             token_type, token_expiration, access_token = token_resp.get("token_type", None), token_resp.get(
@@ -302,6 +316,9 @@ class VGGSSO(SSOAccess):
         if not self.check_required_fields(required_fields, data):
             return dict(status="failed", data=dict(
                 message="Check for missing required key from values [%s]" % ", ".join(required_fields)))
+
+        if not data.get("ConfirmEmail", None):
+            data["ConfirmEmail"] = True
 
         suffix = "/account/register"
 
