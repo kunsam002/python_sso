@@ -7,7 +7,7 @@ VGGSSO is a custom SSO (Single Sign On) library to be used by all (Strategic Bus
 Use the package manager [pip](https://pip.pypa.io/en/stable/) to install vgg_sso.
 
 ```bash
-pip install vgg-sso
+pip install vgg-gd-sso
 ```
 
 ## Usage
@@ -21,6 +21,8 @@ VGG_SSO_CLIENT_ID="clientId",
 VGG_SSO_CLIENT_SECRET="clientSecret",
 VGG_SSO_CLIENT_RO_ID="clientResourceOwnerId",
 VGG_SSO_CLIENT_RO_SECRET="clientResourceOwnerSecret"
+TOKEN_BASE_URL="<token_base_url>" #Optional parameter as library already handles that depending on the debug value
+API_BASE_URL="<api_base_url>" #Optional parameter as library already handles that depending on the debug value
 
 ```
 
@@ -30,13 +32,15 @@ Initialization of the library with respective python application
 from vgg_sso import VGGSSO
 
 # Set debug as True for staging environment and False for production environment
-# Set config_data to be a dictionary with keys representing the configuration variables 
+# Set config_data to be a dictionary with keys representing the configuration variables
 
 config_data = dict(
     VGG_SSO_CLIENT_ID="clientId",
     VGG_SSO_CLIENT_SECRET="clientSecret",
     VGG_SSO_CLIENT_RO_ID="clientResourceOwnerId",
-    VGG_SSO_CLIENT_RO_SECRET="clientResourceOwnerSecret"
+    VGG_SSO_CLIENT_RO_SECRET="clientResourceOwnerSecret",
+    TOKEN_BASE_URL="<token_base_url>",
+    API_BASE_URL="<api_base_url>"
 )
 
 vgg_sso = VGGSSO(debug=True, config_data=config_data)
